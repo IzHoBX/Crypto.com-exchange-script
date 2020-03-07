@@ -2,8 +2,8 @@ import APIHelper
 import sys
 
 # by default only returns normal (available for use balance)
-def getBalance(balanceResponse, sym):
-    balanceDataList = balanceResponse["data"]["coin_list"]
+def getBalance(sym):
+    balanceDataList = apiHelper.balance()["data"]["coin_list"]
     for balanceData in balanceDataList:
         if balanceData['coin'] == sym:
             return balanceData['normal']
