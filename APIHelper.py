@@ -153,3 +153,6 @@ class CryptoAPI:
         params['type'] = 1
         params['volume'] = qty
         return self.api_key_post(url, params)
+
+    def getAllMarketSym(self):
+        return self.http_post(self.apiurl+"/v1/symbols", None, True)
