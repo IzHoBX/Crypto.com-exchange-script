@@ -10,8 +10,13 @@ def getBalance(balanceResponse, sym):
     #to prevent overspending when there is data error
     return 0
 
+def getLowestSellingPrice(sym):
+    return apiHelper.depth(sym)['data']['tick']['asks'][0][0]
+
+def getHighestBuyingPrice(sym):
+    return apiHelper.depth(sym)['data']['tick']['bids'][0][0]
+
 apiHelper = APIHelper.CryptoAPI(sys.argv[1], sys.argv[2])
 #print(apiHelper.create_order("xrpcro", "BUY", 4.00, 1))
 #print(getBalance(apiHelper.balance(), "cro"))
-#print(apiHelper.depth("linkcro"))
-print(apiHelper.getAllMarketSym())
+print(getHighestBuyingPrice("linkcro"))
