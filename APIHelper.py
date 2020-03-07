@@ -32,13 +32,16 @@ class CryptoAPI:
             print("httpGet failed, detail is:%s" % e)
             return {"code": -1, "msg": e}
 
-    def http_post(self, url, params):
+    def http_post(self, url, params, useGET=False):
         headers = {
             "Content-type": "application/x-www-form-urlencoded",
         }
-        data = urllib.urlencode(params or {})
+        data = urllib.parse.urlencode(params or {})
         try:
-            response = requests.post(url, data, headers=headers, timeout=self.timeout)
+            if useGET:
+                response = requests.get(url, timeout=self.timeout)
+            else:
+                response = requests.post(url, data, headers=headers, timeout=self.timeout)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -66,25 +69,29 @@ class CryptoAPI:
     def create_sign(self, params):
         sorted_params = sorted(params.items(), key=lambda d: d[0], reverse=False)
         s = "".join(map(lambda x: str(x[0]) + str(x[1] or ""), sorted_params)) + self.apisec
-        h = hashlib.sha256(s)
+        h = hashlib.sha256(s.encode('utf-8'))
         return h.hexdigest()
 
+    # get order book for market indicated by sym
     def depth(self, sym):
         url = self.apiurl + "/v1/depth"
         params = {"symbol": sym,
                   "type": "step0"}
         return self.http_get(url, params)
 
+    # list all account balances
     def balance(self):
         url = self.apiurl + "/v1/account"
         return self.api_key_post(url, {})
 
+    # list all orders in a given market
     def get_all_orders(self, sym):
         url = self.apiurl + "/v1/allOrders"
         params = {}
         params['symbol'] = sym
         return self.api_key_post(url, params)
 
+    # get ortder detail
     def get_order(self, sym, oid):
         url = self.apiurl + "/v1/showOrder"
         params = {}
@@ -92,6 +99,7 @@ class CryptoAPI:
         params['symbol'] = sym
         return self.api_key_post(url, params)
 
+    # formatted order detail
     def get_ordst(self, sym, oid):
         url = self.apiurl + "/v1/showOrder"
         params = {}
@@ -102,6 +110,7 @@ class CryptoAPI:
             return res['data']['order_info']['status']
         return -1
 
+    # get all pending orders
     def get_open_orders(self, sym):
         url = self.apiurl + "/v1/openOrders"
         params = {}
@@ -109,6 +118,7 @@ class CryptoAPI:
         params['symbol'] = sym
         return self.api_key_post(url, params)
 
+    # get all executed orders
     def get_trades(self, sym):
         url = self.apiurl + "/v1/myTrades"
         params = {}
@@ -128,7 +138,9 @@ class CryptoAPI:
         params['symbol'] = sym
         return self.api_key_post(url, params)
 
-
+    # side: BUY, SELL
+    # prx: unit proce
+    # note: type can be changed - 1: order book, 2 market order
     def create_order(self, sym, side, prx, qty):
         """
             s:return:
