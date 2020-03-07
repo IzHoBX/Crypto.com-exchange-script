@@ -1,5 +1,7 @@
 import APIHelper
 import sys
+MARKET_SYM = "linkcro"
+EXECUTION_INTERVAL = 1
 
 # by default only returns normal (available for use balance)
 def getBalance(sym):
@@ -20,3 +22,6 @@ apiHelper = APIHelper.CryptoAPI(sys.argv[1], sys.argv[2])
 #print(apiHelper.create_order("xrpcro", "BUY", 4.00, 1))
 #print(getBalance(apiHelper.balance(), "cro"))
 print(getHighestBuyingPrice("linkcro"))
+while True:
+    sell = getLowestSellingPrice(MARKET_SYM)
+    buy = getHighestBuyingPrice(MARKET_SYM)
