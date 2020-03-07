@@ -3,7 +3,11 @@ import sys
 
 def getBalance(balanceResponse, sym):
     balanceDataList = balanceResponse["data"]["coin_list"]
-    return balanceDataList
+    for balanceData in balanceDataList:
+        if balanceData['coin'] == sym:
+            return balanceData['normal']
+    #to prevent overspending when there is data error
+    return 0
 
 apiHelper = APIHelper.CryptoAPI(sys.argv[1], sys.argv[2])
 #print(apiHelper.create_order("xrpcro", "BUY", 4.00, 1))
