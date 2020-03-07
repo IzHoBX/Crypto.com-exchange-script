@@ -1,5 +1,7 @@
 import APIHelper
 import sys
+import time
+
 MARKET_SYM = "linkcro"
 EXECUTION_INTERVAL = 1
 
@@ -21,7 +23,10 @@ def getHighestBuyingPrice(sym):
 apiHelper = APIHelper.CryptoAPI(sys.argv[1], sys.argv[2])
 #print(apiHelper.create_order("xrpcro", "BUY", 4.00, 1))
 #print(getBalance(apiHelper.balance(), "cro"))
-print(getHighestBuyingPrice("linkcro"))
+#print(getHighestBuyingPrice("linkcro"))
+
 while True:
     sell = getLowestSellingPrice(MARKET_SYM)
     buy = getHighestBuyingPrice(MARKET_SYM)
+    print(sell)
+    time.sleep(EXECUTION_INTERVAL)
