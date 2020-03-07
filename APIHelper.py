@@ -21,7 +21,7 @@ class CryptoAPI:
         headers = {
             'Content-Type': "application/x-www-form-urlencoded"
         }
-        data = urllib.urlencode(params or {})
+        data = urllib.parse.urlencode(params or {})
         try:
             response = requests.get(url, data, headers=headers, timeout=self.timeout)
             if response.status_code == 200:
@@ -32,16 +32,13 @@ class CryptoAPI:
             print("httpGet failed, detail is:%s" % e)
             return {"code": -1, "msg": e}
 
-    def http_post(self, url, params, useGET=False):
+    def http_post(self, url, params):
         headers = {
             "Content-type": "application/x-www-form-urlencoded",
         }
         data = urllib.parse.urlencode(params or {})
         try:
-            if useGET:
-                response = requests.get(url, timeout=self.timeout)
-            else:
-                response = requests.post(url, data, headers=headers, timeout=self.timeout)
+            response = requests.post(url, data, headers=headers, timeout=self.timeout)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -155,4 +152,4 @@ class CryptoAPI:
         return self.api_key_post(url, params)
 
     def getAllMarketSym(self):
-        return self.http_post(self.apiurl+"/v1/symbols", None, True)
+        return self.http_get(self.apiurl+"/v1/symbols", None)
