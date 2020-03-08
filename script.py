@@ -54,8 +54,13 @@ while True:
     buyingOids = updateBuyingOids(buyingOids)
     priceToBuyAt = getPriceToBuyAt()
     if lastBuyingPrice == priceToBuyAt:
+        print("same as last buying price: " + lastBuyingOrder + " no action taken")
         continue
     elif float(getBalance("cro")) > priceToBuyAt * DEFAULT_AMOUNT_TO_BUY_IN_TARGET:
+        print("creating new buying order because price changed")
         buyingOids.append(apiHelper.create_order(MARKET_SYM, "BUY", priceToBuyAt, DEFAULT_AMOUNT_TO_BUY_IN_TARGET)['data']['order_id'])
+        printCurrentBuyingOrders(buyingOids)
         lastBuyingPrice = priceToBuyAt
+    else:
+        print("Insufficient balance. No buying order created despite price changed. ")
     time.sleep(EXECUTION_INTERVAL)
