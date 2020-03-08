@@ -153,3 +153,9 @@ class CryptoAPI:
 
     def getAllMarketSym(self):
         return self.http_get(self.apiurl+"/v1/symbols", None)
+
+    def getCandleSticksData(self, sym, windowSize):
+        params = {}
+        params['period'] = windowSize
+        params['symbol'] = sym
+        return self.http_get(self.apiurl+"/v1/klines", params)
