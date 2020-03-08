@@ -76,18 +76,31 @@ apiHelper = APIHelper.CryptoAPI(sys.argv[1], sys.argv[2])
 
 buyingOids = []
 lastBuyingPrice = -1
+totalTargetTraded = 0
 
 while True:
-    buyingOids = updateBuyingOids(buyingOids)
-    priceToBuyAt = getPriceToBuyAt()
-    if lastBuyingPrice == priceToBuyAt:
-        print("same as last buying price: " + lastBuyingOrder + " no action taken")
-        continue
-    elif float(getBalance("cro")) > priceToBuyAt * DEFAULT_AMOUNT_TO_BUY_IN_TARGET:
-        print("creating new buying order because price changed")
-        buyingOids.append(apiHelper.create_order(MARKET_SYM, "BUY", priceToBuyAt, DEFAULT_AMOUNT_TO_BUY_IN_TARGET)['data']['order_id'])
-        printCurrentBuyingOrders(buyingOids)
-        lastBuyingPrice = priceToBuyAt
-    else:
-        print("Insufficient balance. No buying order created despite price changed. ")
-    time.sleep(EXECUTION_INTERVAL)
+    try:
+        buyingOids = updateBuyingOids(buyingOids)
+        priceToBuyAt = getPriceToBuyAt()
+        if lastBuyingPrice == getHighestBuyingPrice(MARKET_SYM) and len(buyingOids) >= 1 and float(apiHelper.get_order(MARKET_SYM, buyingOids[-1])['data']['order_info']['price']) == lastBuyingPrice:
+            print("our last buying order in progress and is still the highest: " + str(lastBuyingPrice) + " no action taken")
+        elif float(getBalance("cro")) > priceToBuyAt * DEFAULT_AMOUNT_TO_BUY_IN_TARGET:
+            print("creating new buying order because price changed")
+            buyingOids.append(apiHelper.create_order(MARKET_SYM, "BUY", priceToBuyAt, DEFAULT_AMOUNT_TO_BUY_IN_TARGET)['data']['order_id'])
+            printCurrentBuyingOrders(buyingOids)
+            lastBuyingPrice = priceToBuyAt
+        else:
+            print("Insufficient balance. No buying order created despite price changed. ")
+        time.sleep(EXECUTION_INTERVAL)
+    except KeyboardInterrupt:
+        for oid in buyingOids:
+            info = apiHelper.get_order(MARKET_SYM, oid)
+            orderPrice = float(info['data']['order_info']['price'])
+            toSellPrice = getToSellPrice(orderPrice)
+            completedVolume = float(info['data']['order_info']['deal_volume'])
+            apiHelper.cancel_order(MARKET_SYM, oid)
+            apiHelper.create_order(MARKET_SYM, "SELL", toSellPrice, completedVolume)
+            totalTargetTraded+=completedVolume
+        print("totalTraded:" + str(totalTargetTraded))
+        print("exiting")
+        sys.exit()
