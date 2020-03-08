@@ -7,6 +7,8 @@ MARKET_SYM = "linkcro"
 EXECUTION_INTERVAL = 300
 ORDER_DONE_STATUS_CODE = 2
 DEFAULT_AMOUNT_TO_BUY_IN_TARGET = 1
+DEFAULT_PROFIT_MARGIN = 1.005
+DEFAULT_OUTBID_MARGIN = 0.10
 
 # by default only returns normal (available for use balance)
 def getBalance(sym):
@@ -26,7 +28,7 @@ def getHighestBuyingPrice(sym):
 def getPriceToBuyAt():
     sell = getLowestSellingPrice(MARKET_SYM)
     buy = getHighestBuyingPrice(MARKET_SYM)
-    return round(min(buy+0.1, buy+sell/2), 2)
+    return round(min(buy+DEFAULT_OUTBID_MARGIN, buy+sell/2), 2)
 
 def updateBuyingOids(buyingOids):
     print("updating buying orders at time: " + str(datetime.datetime.now()))
@@ -58,6 +60,9 @@ def updateBuyingOids(buyingOids):
 def printCurrentBuyingOrders(buyingOids):
     for id in buyingOids:
         print(id + " " + apiHelper.get_order(MARKET_SYM, id)['data']['order_info']['price'])
+
+def getToSellPrice(buyingPrice):
+    return round(buyingPrice*DEFAULT_PROFIT_MARGIN, 2)
 
 apiHelper = APIHelper.CryptoAPI(sys.argv[1], sys.argv[2])
 
