@@ -31,35 +31,43 @@ def getPriceToBuyAt():
     return round(min(buy+DEFAULT_OUTBID_MARGIN, buy+sell/2), 2)
 
 def updateBuyingOids(buyingOids):
+    global totalTargetTraded
+    print("-----------------------------------------------------------------")
     print("updating buying orders at time: " + str(datetime.datetime.now()))
     currentBuyingPrice = getHighestBuyingPrice(MARKET_SYM)
     for i in range(0, len(buyingOids)):
         info = apiHelper.get_order(MARKET_SYM, buyingOids[i])
-        if info['data']['order_info']['price'] < currentBuyingPrice:
-            print("market buying price has rose above our bid at: " + currentBuyingPrice + " cancelling order at: " + info['data']['order_info']['price'])
+        orderPrice = float(info['data']['order_info']['price'])
+        toSellPrice = getToSellPrice(orderPrice)
+        completedVolume = float(info['data']['order_info']['deal_volume'])
+        if orderPrice < currentBuyingPrice:
+            print("market buying price has rose above our bid at: " + str(currentBuyingPrice) + " cancelling order at: " + str(orderPrice))
             apiHelper.cancel_order(MARKET_SYM, buyingOids[i])
-            if info['data']['order_info']['deal_volume'] > 0:
-                apiHelper.create_order(MARKET_SYM, "SELL", round(info['data']['order_info']['price']*1.003, 2), info['data']['order_info']['deal_volume'])
-                print("created order selling order with price: " + round(info['data']['order_info']['price']*1.003, 2))
+            totalTargetTraded += completedVolume
+            if completedVolume > 0:
+                apiHelper.create_order(MARKET_SYM, "SELL", toSellPrice, completedVolume)
+                print("created order selling order with price: " + str(toSellPrice))
             else:
                 print("Nothing was bought, no need to sell")
             buyingOids = buyingOids[:i] + buyingOids[i+1:]
-        elif info['data']['order_info']['price'] == currentBuyingPrice:
-            print("market price equal to our bid at: " + info['data']['order_info']['price'])
-            if apiHelper.get_ordst(MARKET_SYM, lastBuyingOrder[0]) == ORDER_DONE_STATUS_CODE:
-                apiHelper.create_order(MARKET_SYM, "SELL", round(info['data']['order_info']['price']*1.003, 2), info['data']['order_info']['deal_volume'])
-                print("Our order complated. Created order selling order with price: " + round(info['data']['order_info']['price']*1.003, 2))
+        elif orderPrice == currentBuyingPrice:
+            print("market price equal to our bid at: " + str(orderPrice))
+            if apiHelper.get_ordst(MARKET_SYM, buyingOids[i]) == ORDER_DONE_STATUS_CODE:
+                totalTargetTraded+=completedVolume
+                apiHelper.create_order(MARKET_SYM, "SELL", toSellPrice, completedVolume)
+                print("Our order complated. Created order selling order with price: " + str(toSellPrice))
                 buyingOids = buyingOids[:i] + buyingOids[i+1:]
         else:#if my buying price is higher than current  highest buying price, that means order completed
-            print("market buying price has fallen below our bid at: " + currentBuyingPrice + " creating sell order at: " + round(info['data']['order_info']['price']*1.003, 2))
-            apiHelper.create_order(MARKET_SYM, "SELL", round(info['data']['order_info']['price']*1.003, 2), info['data']['order_info']['deal_volume'])
+            print("market buying price is: " + str(currentBuyingPrice) + "which is lower than our bid. Creating sell order at: " + str(toSellPrice))
+            apiHelper.create_order(MARKET_SYM, "SELL", toSellPrice, completedVolume)
             buyingOids = buyingOids[:i] + buyingOids[i+1:]
+            totalTargetTraded+=completedVolume
 
     return buyingOids
 
 def printCurrentBuyingOrders(buyingOids):
     for id in buyingOids:
-        print(id + " " + apiHelper.get_order(MARKET_SYM, id)['data']['order_info']['price'])
+        print(str(id) + " " + apiHelper.get_order(MARKET_SYM, id)['data']['order_info']['price'])
 
 def getToSellPrice(buyingPrice):
     return round(buyingPrice*DEFAULT_PROFIT_MARGIN, 2)
