@@ -2,17 +2,17 @@ import urllib.parse
 import requests
 import hashlib
 import time
+import hmac
 
 
 def get_timestamp():
-    ts = "%d"%int(round(time.time() * 1000))
-    return ts
+    return int(time.time() * 1000)
 
 
 class CryptoAPI:
     def __init__(self, key, sec):
         self.timeout = 1000
-        self.apiurl = "https://api.crypto.com/v2"
+        self.apiurl = "https://api.crypto.com/v2/"
         self.apikey = key
         self.apisec = sec
         return
@@ -34,52 +34,52 @@ class CryptoAPI:
 
     def http_post(self, url, params):
         headers = {
-            "Content-type": "application/x-www-form-urlencoded",
+            "Content-type": "application/json",
         }
-        data = urllib.parse.urlencode(params or {})
         try:
-            response = requests.post(url, data, headers=headers, timeout=self.timeout)
+            response = requests.post(url, json=params, headers=headers, timeout=self.timeout)
             if response.status_code == 200:
                 return response.json()
             else:
-                return {"code": -1, "msg": "response status:%s" % response.status_code}
+                return {"code": -1, "msg": f"response code:{response.status_code}, msg: {response.text}" }
         except Exception as e:
             print("httpPost failed, detail is:%s" % e)
             return {"code": -1, "msg": e}
 
-    def api_key_get(self, url, params):
+    def api_key_post(self, path, params):
         if not params:
             params = {}
-        params["api_key"] = self.apikey
-        params["time"] = get_timestamp()
-        params["sign"] = self.create_sign(params)
-        return self.http_get(url, params)
-
-    def api_key_post(self, url, params):
-        if not params:
-            params = {}
-        params["api_key"] = self.apikey
-        params["time"] = get_timestamp()
-        params["sign"] = self.create_sign(params)
-        return self.http_post(url, params)
+        req = {}
+        req["id"] = 1
+        req["method"] = path
+        req["api_key"] = self.apikey
+        req["nonce"] = get_timestamp()
+        req["params"] = params
+        req["sig"] = self.create_sign(req)
+        print(req)
+        return self.http_post(self.apiurl + path, req)
 
     def create_sign(self, params):
-        sorted_params = sorted(params.items(), key=lambda d: d[0], reverse=False)
-        s = "".join(map(lambda x: str(x[0]) + str(x[1] or ""), sorted_params)) + self.apisec
-        h = hashlib.sha256(s.encode('utf-8'))
-        return h.hexdigest()
+        sorted_params = sorted(params["params"].items(), key=lambda d: d[0], reverse=False)
+        s = params["method"] + str(params["id"]) + self.apikey + "".join(map(lambda x: str(x[0]) + str(x[1] or ""), sorted_params)) + str(params["nonce"])
+        print(s)
+        return hmac.new(
+            bytes(self.apisec, 'utf-8'),
+            msg=bytes(s, 'utf-8'),
+            digestmod=hashlib.sha256
+        ).hexdigest()
 
     # get order book for market indicated by sym
     def depth(self, sym, n=10):
-        url = self.apiurl + "/public/get-book"
+        url = self.apiurl + "public/get-book"
         print(url)
         params = {"instrument_name": sym, "depth": 10}
         return self.http_get(url, params)
 
     # list all account balances
     def balance(self):
-        url = self.apiurl + "/v1/account"
-        return self.api_key_post(url, {})
+        path = "private/get-account-summary"
+        return self.api_key_post(path, {})
 
     # list all orders in a given market
     def get_all_orders(self, sym):
@@ -152,10 +152,10 @@ class CryptoAPI:
         return self.api_key_post(url, params)
 
     def getAllMarketSym(self):
-        return self.http_get(self.apiurl+"/public/get-instruments", None)
+        return self.http_get(self.apiurl+"public/get-instruments", None)
 
     def getCandleSticksData(self, sym, windowSize):
         params = {}
         params['timeframe'] = windowSize
         params['instrument_name'] = sym
-        return self.http_get(self.apiurl+"/public/get-candlestick", params)
+        return self.http_get(self.apiurl+"public/get-candlestick", params)
