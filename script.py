@@ -4,7 +4,7 @@ import time
 import datetime
 import math
 
-MARKET_SYM = "linkcro"
+MARKET_SYM = "LINK_CRO"
 TARGET_SYM = "link"
 EXECUTION_INTERVAL = 10
 ORDER_DONE_STATUS_CODE = 2

@@ -1,4 +1,4 @@
-import urllib
+import urllib.parse
 import requests
 import hashlib
 import time
@@ -12,7 +12,7 @@ def get_timestamp():
 class CryptoAPI:
     def __init__(self, key, sec):
         self.timeout = 1000
-        self.apiurl = "https://api.crypto.com"
+        self.apiurl = "https://api.crypto.com/v2"
         self.apikey = key
         self.apisec = sec
         return
@@ -70,10 +70,10 @@ class CryptoAPI:
         return h.hexdigest()
 
     # get order book for market indicated by sym
-    def depth(self, sym):
-        url = self.apiurl + "/v1/depth"
-        params = {"symbol": sym,
-                  "type": "step0"}
+    def depth(self, sym, n=10):
+        url = self.apiurl + "/public/get-book"
+        print(url)
+        params = {"instrument_name": sym, "depth": 10}
         return self.http_get(url, params)
 
     # list all account balances
@@ -152,10 +152,10 @@ class CryptoAPI:
         return self.api_key_post(url, params)
 
     def getAllMarketSym(self):
-        return self.http_get(self.apiurl+"/v1/symbols", None)
+        return self.http_get(self.apiurl+"/public/get-instruments", None)
 
     def getCandleSticksData(self, sym, windowSize):
         params = {}
-        params['period'] = windowSize
-        params['symbol'] = sym
-        return self.http_get(self.apiurl+"/v1/klines", params)
+        params['timeframe'] = windowSize
+        params['instrument_name'] = sym
+        return self.http_get(self.apiurl+"/public/get-candlestick", params)
